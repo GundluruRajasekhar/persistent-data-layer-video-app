@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Task 3 — Persistent Data Layer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #0F1720;
+    --surface: #16212C;
+    --surface-2: #1C2A36;
+    --line: #26374590;
+    --text: #E8EDF2;
+    --muted: #8CA0B3;
+    --teal: #4FD1C5;
+    --amber: #F2B84B;
+    --font-sans: 'IBM Plex Sans', -apple-system, sans-serif;
+    --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+  }
+  *{ box-sizing: border-box; }
+  html{ scroll-behavior: smooth; }
+  body{
+    margin:0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-sans);
+    line-height: 1.55;
+  }
+  @media (prefers-reduced-motion: reduce){
+    *{ animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; }
+  }
+  a{ color: var(--teal); }
+  .wrap{ max-width: 980px; margin: 0 auto; padding: 0 24px; }
+
+  /* Hero */
+  header.hero{ padding: 72px 0 40px; border-bottom: 1px solid var(--line); }
+  .kicker{ font-family: var(--font-mono); font-size: 13px; color: var(--teal); margin: 0 0 14px; }
+  h1{ font-size: clamp(32px, 5vw, 52px); line-height: 1.08; margin: 0 0 18px; font-weight: 600; max-width: 14ch; }
+  .lede{ color: var(--muted); font-size: 18px; max-width: 56ch; margin: 0 0 28px; }
+  .cta-row{ display:flex; gap: 12px; flex-wrap: wrap; }
+  .btn{ font-family: var(--font-sans); font-weight: 600; font-size: 15px; padding: 11px 20px; border-radius: 8px; border: 1px solid var(--line); text-decoration:none; cursor:pointer; display:inline-flex; align-items:center; gap:8px; background: var(--surface); color: var(--text); transition: border-color .15s ease, transform .15s ease; }
+  .btn:hover{ border-color: var(--teal); }
+  .btn.primary{ background: var(--teal); color: #06201D; border-color: var(--teal); }
+  .btn.primary:hover{ transform: translateY(-1px); }
+  .btn:disabled{ opacity:.5; cursor:not-allowed; }
+
+  /* Narration */
+  .narration{ margin-top: 30px; padding: 18px 20px; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; }
+  .narration-row{ display:flex; align-items:center; gap: 14px; flex-wrap: wrap; }
+  .narration-label{ font-family: var(--font-mono); font-size: 13px; color: var(--muted); }
+  .transcript{ margin-top: 14px; font-size: 14px; color: var(--muted); display:none; border-top: 1px solid var(--line); padding-top: 14px; }
+  .transcript.open{ display:block; }
+  #nStatus{ font-family: var(--font-mono); font-size: 12px; color: var(--amber); min-width: 90px; }
+
+  /* Sections */
+  section{ padding: 56px 0; border-bottom: 1px solid var(--line); }
+  h2{ font-size: 26px; font-weight: 600; margin: 0 0 8px; }
+  .section-note{ color: var(--muted); font-size: 15px; margin: 0 0 32px; max-width: 60ch; }
+
+  /* ER Diagram */
+  .diagram-scroll{ overflow-x: auto; padding: 4px; }
+  .diagram-scroll svg{ display:block; min-width: 640px; }
+  .ent{ fill: var(--surface); stroke: #2E4152; }
+  .ent-title{ font-family: var(--font-mono); font-size: 13px; font-weight: 600; fill: var(--text); }
+  .ent-field{ font-family: var(--font-mono); font-size: 11.5px; fill: var(--muted); }
+  .rel-line{ stroke: var(--teal); stroke-width: 1.4; fill: none; opacity: .8; }
+  .rel-label{ font-family: var(--font-mono); font-size: 10.5px; fill: var(--teal); }
+
+  /* Architecture flow */
+  .flow{ display:flex; align-items:center; gap: 0; flex-wrap: wrap; }
+  .flow-step{ background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 18px 20px; flex: 1 1 180px; min-width: 150px; }
+  .flow-step .n{ font-family: var(--font-mono); color: var(--teal); font-size: 12px; margin-bottom: 6px; }
+  .flow-step .t{ font-weight: 600; font-size: 15px; margin-bottom: 4px; }
+  .flow-step .d{ color: var(--muted); font-size: 13px; }
+  .flow-arrow{ flex: 0 0 40px; text-align:center; color: var(--teal); font-size: 20px; }
+
+  /* Stack pills */
+  .pills{ display:flex; flex-wrap:wrap; gap: 10px; }
+  .pill{ font-family: var(--font-mono); font-size: 13px; padding: 7px 14px; border: 1px solid var(--line); border-radius: 999px; color: var(--text); background: var(--surface); }
+
+  /* Verified checklist */
+  .checklist{ display:grid; grid-template-columns: repeat(auto-fit, minmax(220px,1fr)); gap: 14px; }
+  .check-item{ background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px 18px; display:flex; gap: 12px; align-items:flex-start; }
+  .check-mark{ color: var(--teal); font-family: var(--font-mono); font-weight: 600; }
+  .check-item .t{ font-weight: 600; font-size: 14.5px; margin-bottom: 3px; }
+  .check-item .d{ color: var(--muted); font-size: 13px; }
+
+  /* Links */
+  .link-card{ display:flex; justify-content: space-between; align-items:center; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 18px 20px; margin-bottom: 12px; }
+  .link-card .t{ font-weight: 600; font-size: 15px; }
+  .link-card .u{ font-family: var(--font-mono); font-size: 12.5px; color: var(--muted); margin-top: 2px; word-break: break-all; }
+
+  footer{ padding: 40px 0 60px; color: var(--muted); font-size: 13px; }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header class="hero">
+    <p class="kicker">Innovation Hacks internship — Task 3</p>
+    <h1>A persistent data layer for Users, Projects &amp; Tasks</h1>
+    <p class="lede">A relational database, modeled and enforced end to end — connected to the Task 2 API so data survives restarts, deploys, and time. Built with PostgreSQL, Prisma, and Express, live on Vercel.</p>
+    <div class="cta-row">
+      <a class="btn primary" href="#architecture">See the architecture</a>
+      <a class="btn" href="#verified">See it verified</a>
+    </div>
+
+    <div class="narration">
+      <div class="narration-row">
+        <button class="btn primary" id="playBtn">▶ Play narration</button>
+        <button class="btn" id="stopBtn" disabled>■ Stop</button>
+        <button class="btn" id="transcriptBtn">Show transcript</button>
+        <span class="narration-label">~50 seconds</span>
+        <span id="nStatus"></span>
+      </div>
+      <div class="transcript" id="transcript"></div>
+    </div>
+  </header>
+
+  <section id="schema">
+    <h2>The schema</h2>
+    <p class="section-note">Four entities, three relationships. Every task belongs to a project and an assignee; every project has members with roles.</p>
+    <div class="diagram-scroll">
+      <svg viewBox="0 0 920 360" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Entity relationship diagram of User, Project, ProjectMember, and Task">
+        <!-- User -->
+        <rect class="ent" x="20" y="30" width="190" height="118" rx="8"/>
+        <text class="ent-title" x="36" y="54">User</text>
+        <text class="ent-field" x="36" y="76">id · uuid</text>
+        <text class="ent-field" x="36" y="93">email · fullName</text>
+        <text class="ent-field" x="36" y="110">role · enum</text>
+        <text class="ent-field" x="36" y="127">isActive · bool</text>
+
+        <!-- Project -->
+        <rect class="ent" x="360" y="30" width="190" height="98" rx="8"/>
+        <text class="ent-title" x="376" y="54">Project</text>
+        <text class="ent-field" x="376" y="76">id · uuid</text>
+        <text class="ent-field" x="376" y="93">name · status</text>
+        <text class="ent-field" x="376" y="110">ownerId → User</text>
+
+        <!-- ProjectMember -->
+        <rect class="ent" x="360" y="200" width="190" height="98" rx="8"/>
+        <text class="ent-title" x="376" y="224">ProjectMember</text>
+        <text class="ent-field" x="376" y="246">userId → User</text>
+        <text class="ent-field" x="376" y="263">projectId → Project</text>
+        <text class="ent-field" x="376" y="280">role · enum</text>
+
+        <!-- Task -->
+        <rect class="ent" x="700" y="115" width="200" height="132" rx="8"/>
+        <text class="ent-title" x="716" y="139">Task</text>
+        <text class="ent-field" x="716" y="161">title · description</text>
+        <text class="ent-field" x="716" y="178">status · priority</text>
+        <text class="ent-field" x="716" y="195">projectId → Project</text>
+        <text class="ent-field" x="716" y="212">assigneeId → User</text>
+
+        <!-- Relationship lines -->
+        <path class="rel-line" d="M210,70 C280,70 290,79 360,79"/>
+        <text class="rel-label" x="230" y="64">owns</text>
+
+        <path class="rel-line" d="M115,148 C115,220 250,249 360,249"/>
+        <text class="rel-label" x="150" y="230">member of</text>
+
+        <path class="rel-line" d="M550,89 C650,89 650,150 700,168"/>
+        <text class="rel-label" x="600" y="105">has</text>
+
+        <path class="rel-line" d="M115,148 C115,320 550,320 700,215"/>
+        <text class="rel-label" x="380" y="332">assigned to</text>
+      </svg>
+    </div>
+  </section>
+
+  <section id="architecture">
+    <h2>Architecture</h2>
+    <p class="section-note">Requests flow through one clear path, with validation and env-based config at every boundary.</p>
+    <div class="flow">
+      <div class="flow-step"><div class="n">01</div><div class="t">Frontend</div><div class="d">Task 4's platform / API clients</div></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step"><div class="n">02</div><div class="t">REST API</div><div class="d">/api/v1 · Express routes</div></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step"><div class="n">03</div><div class="t">Backend</div><div class="d">Validation · Prisma ORM</div></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step"><div class="n">04</div><div class="t">Database</div><div class="d">PostgreSQL on Neon</div></div>
+    </div>
+  </section>
+
+  <section id="stack">
+    <h2>Built with</h2>
+    <div class="pills">
+      <span class="pill">Node.js</span>
+      <span class="pill">Express</span>
+      <span class="pill">Prisma ORM</span>
+      <span class="pill">PostgreSQL (Neon)</span>
+      <span class="pill">Vercel</span>
+      <span class="pill">Zod-style validation</span>
+    </div>
+  </section>
+
+  <section id="verified">
+    <h2>Verified end to end</h2>
+    <p class="section-note">Every operation tested live against the deployed API, not just locally.</p>
+    <div class="checklist">
+      <div class="check-item"><span class="check-mark">✓</span><div><div class="t">Create</div><div class="d">New user persisted with generated UUID and timestamps</div></div></div>
+      <div class="check-item"><span class="check-mark">✓</span><div><div class="t">Read</div><div class="d">Fetched back with relations (ownedProjects, memberships)</div></div></div>
+      <div class="check-item"><span class="check-mark">✓</span><div><div class="t">Update</div><div class="d">Partial update applied, updatedAt refreshed correctly</div></div></div>
+      <div class="check-item"><span class="check-mark">✓</span><div><div class="t">Delete</div><div class="d">Row removed; subsequent read correctly returns "not found"</div></div></div>
+      <div class="check-item"><span class="check-mark">✓</span><div><div class="t">Health check</div><div class="d">/api/v1/health confirms live database connection</div></div></div>
+      <div class="check-item"><span class="check-mark">✓</span><div><div class="t">Config safety</div><div class="d">No hard-coded credentials — DATABASE_URL via env vars</div></div></div>
+    </div>
+  </section>
+
+  <section id="links" style="border-bottom:none;">
+    <h2>Links</h2>
+    <div class="link-card">
+      <div>
+        <div class="t">Live API</div>
+        <div class="u">task3-persistent-data-layer-t3tx.vercel.app</div>
+      </div>
+      <a class="btn" href="https://task3-persistent-data-layer-t3tx.vercel.app/api/v1/health" target="_blank" rel="noopener">Open ↗</a>
+    </div>
+    <div class="link-card">
+      <div>
+        <div class="t">Source code</div>
+        <div class="u">github.com/GundluruRajasekhar/task3-persistent-data-layer</div>
+      </div>
+      <a class="btn" href="https://github.com/GundluruRajasekhar/task3-persistent-data-layer" target="_blank" rel="noopener">Open ↗</a>
+    </div>
+  </section>
+
+  <footer>
+    Task 3 — Persistent Data Layer · Innovation Hacks internship · Built by Gundluru Rajasekhar
+  </footer>
+</div>
+
+<script>
+  const script = "Task 3 is about giving the Users, Projects and Tasks API a real, persistent data layer. " +
+    "Every user, project, membership, and task is now modeled as a relational table in PostgreSQL, connected through Prisma. " +
+    "A user can own projects, join others as a member with a specific role, and be assigned tasks that carry a status and a priority. " +
+    "Requests flow from the frontend, through the REST API, through validation in the backend, down to the database itself. " +
+    "The whole thing is deployed live on Vercel, with the database configuration kept safely in environment variables, never hard-coded. " +
+    "I tested every operation directly against the live deployment: creating a user, reading it back with its relationships, updating its name, and deleting it, with the API correctly confirming each step. " +
+    "This is the persistent foundation the rest of the platform builds on.";
+
+  const playBtn = document.getElementById('playBtn');
+  const stopBtn = document.getElementById('stopBtn');
+  const transcriptBtn = document.getElementById('transcriptBtn');
+  const transcriptEl = document.getElementById('transcript');
+  const statusEl = document.getElementById('nStatus');
+  let utterance = null;
+
+  transcriptEl.textContent = script;
+
+  transcriptBtn.addEventListener('click', () => {
+    const open = transcriptEl.classList.toggle('open');
+    transcriptBtn.textContent = open ? 'Hide transcript' : 'Show transcript';
+  });
+
+  function supportsSpeech(){
+    return 'speechSynthesis' in window;
+  }
+
+  playBtn.addEventListener('click', () => {
+    if(!supportsSpeech()){
+      statusEl.textContent = 'unsupported';
+      transcriptEl.classList.add('open');
+      transcriptBtn.textContent = 'Hide transcript';
+      return;
+    }
+    window.speechSynthesis.cancel();
+    utterance = new SpeechSynthesisUtterance(script);
+    utterance.rate = 0.98;
+    utterance.pitch = 1;
+    utterance.onstart = () => { statusEl.textContent = 'playing…'; playBtn.disabled = true; stopBtn.disabled = false; };
+    utterance.onend = () => { statusEl.textContent = 'finished'; playBtn.disabled = false; stopBtn.disabled = true; };
+    utterance.onerror = () => { statusEl.textContent = 'error'; playBtn.disabled = false; stopBtn.disabled = true; };
+    window.speechSynthesis.speak(utterance);
+  });
+
+  stopBtn.addEventListener('click', () => {
+    window.speechSynthesis.cancel();
+    statusEl.textContent = 'stopped';
+    playBtn.disabled = false;
+    stopBtn.disabled = true;
+  });
+</script>
+
+</body>
+</html>
